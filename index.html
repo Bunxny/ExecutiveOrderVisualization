@@ -8,11 +8,28 @@
   <style>
     body { font-family: Arial; margin: 40px; }
     #timeline { width: 100%; height: 600px; }
+    .legend-item { display: flex; align-items: center; margin-bottom: 10px; }
+    .legend-box { width: 20px; height: 20px; margin-right: 10px; }
   </style>
 </head>
 <body>
   <h2>Executive Orders Timeline Explorer</h2>
   <div id="timeline"></div>
+
+  <div id="custom-legend">
+    <div class="legend-item">
+      <div class="legend-box" style="background-color: rgb(0, 102, 204);"></div>
+      <span>Democrat: Circle</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-box" style="background-color: rgb(204, 0, 0);"></div>
+      <span>Republican: Square</span>
+    </div>
+    <div class="legend-item">
+      <div class="legend-box" style="background-color: gray;"></div>
+      <span>Unknown: Diamond</span>
+    </div>
+  </div>
 
   <script>
     function getPresident(dateStr) {
@@ -81,50 +98,16 @@
         grouped[president].customdata.push(url);
       });
 
-      const legendTraces = [
-        {
-          type: 'scatter',
-          mode: 'markers',
-          name: 'Democrat',
-          x: [null],
-          y: [null],
-          marker: {
-            color: partyColors['Democrat'],
-            symbol: partySymbols['Democrat'],
-            size: 16,
-            line: { width: 2, color: 'black' }
-          },
-          showlegend: true,
-          hoverinfo: 'skip'
-        },
-        {
-          type: 'scatter',
-          mode: 'markers',
-          name: 'Republican',
-          x: [null],
-          y: [null],
-          marker: {
-            color: partyColors['Republican'],
-            symbol: partySymbols['Republican'],
-            size: 16,
-            line: { width: 2, color: 'black' }
-          },
-          showlegend: true,
-          hoverinfo: 'skip'
-        }
-      ];
-
       const traces = Object.keys(grouped).map(president => ({
         type: 'scatter',
         mode: 'markers',
-        name: '',
-        showlegend: false,
+        name: president,
         x: grouped[president].x,
         y: grouped[president].y,
         text: grouped[president].text,
         customdata: grouped[president].customdata,
         marker: grouped[president].marker,
-        textfont: { color: 'black' }
+        showlegend: false // Hide legend for individual traces
       }));
 
       const annotations = Object.entries(grouped).map(([president, group]) => {
@@ -164,13 +147,7 @@
         }
       };
 
-      Plotly.newPlot('timeline', legendTraces.concat(traces), layout);
-
-      const plotDiv = document.getElementById('timeline');
-      plotDiv.on('plotly_click', function(data){
-        const url = data.points[0].customdata;
-        if (url) window.open(url, '_blank');
-      });
+      Plotly.newPlot('timeline', traces, layout);
     });
   </script>
 </body>
