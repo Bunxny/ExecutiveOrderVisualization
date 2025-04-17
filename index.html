@@ -42,34 +42,37 @@
       Republican: 'rgb(204, 0, 0)',
       Unknown: 'gray'
     };
-    
 
     d3.csv("./executive_orders.csv").then(function(data) {
       const grouped = {};
 
       data.forEach(d => {
-      const parseDate = d3.timeParse("%m/%d/%Y");
-      const dateObj = parseDate(d.signing_date.trim());
-      const date = dateObj ? dateObj.toISOString().split("T")[0] : null;
-      if (!date) return;
+        const parseDate = d3.timeParse("%m/%d/%Y");
+        const dateObj = parseDate(d.signing_date.trim());
+        const date = dateObj ? dateObj.toISOString().split("T")[0] : null;
+        if (!date) return;
 
-      const title = d.title;
-      const url = d.html_url || d.pdf_url || "";
+        const title = d.title;
+        const url = d.html_url || d.pdf_url || "";
 
-      const presidentObj = getPresident(date);
-      const president = presidentObj.name;
-      const party = presidentObj.party;
+        const presidentObj = getPresident(date);
+        const president = presidentObj.name;
+        const party = presidentObj.party;
 
-      if (!grouped[president]) grouped[president] = {
-        x: [], y: [], text: [], customdata: [], marker: { color: partyColors[party], size: 10, line: { width: 2, color: 'black' } }
-      };
+        if (!grouped[president]) grouped[president] = {
+          x: [], y: [], text: [], customdata: [],
+          marker: {
+            color: partyColors[party],
+            size: 10,
+            line: { width: 2, color: 'black' }
+          }
+        };
 
-      grouped[president].x.push(date);
-      grouped[president].y.push(president);
-      grouped[president].text.push(`${d.executive_order_number ? "EO " + d.executive_order_number + ": " : ""}${title}`);
-      grouped[president].customdata.push(url);
-    });
-
+        grouped[president].x.push(date);
+        grouped[president].y.push(president);
+        grouped[president].text.push(`${d.executive_order_number ? "EO " + d.executive_order_number + ": " : ""}${title}`);
+        grouped[president].customdata.push(url);
+      });
 
       const traces = Object.keys(grouped).map(president => ({
         type: 'scatter',
@@ -79,39 +82,46 @@
         y: grouped[president].y,
         text: grouped[president].text,
         customdata: grouped[president].customdata,
-        marker: { size: 10 }
+        marker: grouped[president].marker,
+        textfont: { color: 'black' }
       }));
 
-      // Add annotations for EO counts
-        const annotations = Object.entries(grouped).map(([president, group]) => {
-        // Find the latest date for that president
+      const annotations = Object.entries(grouped).map(([president, group]) => {
         const dates = group.x.map(d => new Date(d));
         const maxDate = new Date(Math.max(...dates));
         const count = group.x.length;
 
         return {
-            x: maxDate.toISOString().split("T")[0],
-            y: president,
-            text: `📝 ${count} orders`,
-            showarrow: true,
-            arrowhead: 4,
-            ax: 40,
-            ay: -20,
-            font: { size: 12, color: 'black' },
-            bgcolor: 'rgba(255,255,255,0.7)',
-            bordercolor: 'gray',
-            borderwidth: 1
+          x: maxDate.toISOString().split("T")[0],
+          y: president,
+          text: `📝 ${count} orders`,
+          showarrow: true,
+          arrowhead: 4,
+          ax: 40,
+          ay: -20,
+          font: { size: 12, color: 'black' },
+          bgcolor: 'rgba(255,255,255,0.7)',
+          bordercolor: 'gray',
+          borderwidth: 1
         };
-        });
+      });
 
-        const layout = {
+      const layout = {
         title: 'Executive Orders Over Time',
         hovermode: 'closest',
-        xaxis: { title: 'Signing Date', type: 'date', autorange: true},
+        xaxis: { title: 'Signing Date', type: 'date', autorange: true },
         yaxis: { title: 'President', automargin: true },
-        annotations: annotations
-        };
-
+        annotations: annotations,
+        hoverlabel: {
+          font: {
+            color: 'black',
+            size: 12,
+            family: 'Arial'
+          },
+          bgcolor: 'white',
+          bordercolor: 'black'
+        }
+      };
 
       Plotly.newPlot('timeline', traces, layout);
 
