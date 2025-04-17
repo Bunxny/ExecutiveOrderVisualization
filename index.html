@@ -18,45 +18,58 @@
     function getPresident(dateStr) {
       const date = new Date(dateStr);
       const presidents = [
-        { name: "President 47: Donald Trump", start: "2025-01-20"}, 
-        { name: "President 46: Joe Biden", start: "2021-01-20" },
-        { name: "President 45: Donald Trump", start: "2017-01-20" },
-        { name: "President 44: Barack Obama", start: "2009-01-20" },
-        { name: "President 43: George W. Bush", start: "2001-01-20" },
-        { name: "President 42: Bill Clinton", start: "1993-01-20" },
-        { name: "President 41: George H. W. Bush", start: "1989-01-20" },
-        { name: "President 40: Ronald Reagan", start: "1981-01-20" }
+        { name: "President 47: Donald Trump", start: "2025-01-20", party: "Republican" }, 
+        { name: "President 46: Joe Biden", start: "2021-01-20", party: "Democrat" },
+        { name: "President 45: Donald Trump", start: "2017-01-20", party: "Republican" },
+        { name: "President 44: Barack Obama", start: "2009-01-20", party: "Democrat" },
+        { name: "President 43: George W. Bush", start: "2001-01-20", party: "Republican" },
+        { name: "President 42: Bill Clinton", start: "1993-01-20", party: "Democrat" },
+        { name: "President 41: George H. W. Bush", start: "1989-01-20", party: "Republican" },
+        { name: "President 40: Ronald Reagan", start: "1981-01-20", party: "Republican" }
       ];
       for (let i = 0; i < presidents.length; i++) {
         const start = new Date(presidents[i].start);
         const end = i === 0 ? new Date() : new Date(presidents[i - 1].start);
         if (date >= start && date < end) {
-          return presidents[i].name;
+          return presidents[i];
         }
       }
-      return "Unknown";
+      return { name: "Unknown", party: "Unknown" };
     }
+
+    const partyColors = {
+      Democrat: 'rgb(0, 102, 204)',
+      Republican: 'rgb(204, 0, 0)',
+      Unknown: 'gray'
+    };
     
 
     d3.csv("./executive_orders.csv").then(function(data) {
       const grouped = {};
 
       data.forEach(d => {
-        const parseDate = d3.timeParse("%m/%d/%Y");
-        const dateObj = parseDate(d.signing_date.trim());
-        const date = dateObj ? dateObj.toISOString().split("T")[0] : null;
-        if (!date) return;
+      const parseDate = d3.timeParse("%m/%d/%Y");
+      const dateObj = parseDate(d.signing_date.trim());
+      const date = dateObj ? dateObj.toISOString().split("T")[0] : null;
+      if (!date) return;
 
-        const title = d.title;
-        const url = d.html_url || d.pdf_url || "";
-        const president = getPresident(date);
+      const title = d.title;
+      const url = d.html_url || d.pdf_url || "";
 
-        if (!grouped[president]) grouped[president] = { x: [], y: [], text: [], customdata: [] };
-        grouped[president].x.push(date);
-        grouped[president].y.push(president);
-        grouped[president].text.push(`${d.executive_order_number ? "EO " + d.executive_order_number + ": " : ""}${title}`);
-        grouped[president].customdata.push(url);
-      });
+      const presidentObj = getPresident(date);
+      const president = presidentObj.name;
+      const party = presidentObj.party;
+
+      if (!grouped[president]) grouped[president] = {
+        x: [], y: [], text: [], customdata: [], marker: { color: partyColors[party], size: 10, line: { width: 2, color: 'black' } }
+      };
+
+      grouped[president].x.push(date);
+      grouped[president].y.push(president);
+      grouped[president].text.push(`${d.executive_order_number ? "EO " + d.executive_order_number + ": " : ""}${title}`);
+      grouped[president].customdata.push(url);
+    });
+
 
       const traces = Object.keys(grouped).map(president => ({
         type: 'scatter',
