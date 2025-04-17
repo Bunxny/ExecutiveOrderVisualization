@@ -81,10 +81,44 @@
         grouped[president].customdata.push(url);
       });
 
+      const legendTraces = [
+        {
+          type: 'scatter',
+          mode: 'markers',
+          name: 'Democrat',
+          x: [null],
+          y: [null],
+          marker: {
+            color: partyColors['Democrat'],
+            symbol: partySymbols['Democrat'],
+            size: 16,
+            line: { width: 2, color: 'black' }
+          },
+          showlegend: true,
+          hoverinfo: 'skip'
+        },
+        {
+          type: 'scatter',
+          mode: 'markers',
+          name: 'Republican',
+          x: [null],
+          y: [null],
+          marker: {
+            color: partyColors['Republican'],
+            symbol: partySymbols['Republican'],
+            size: 16,
+            line: { width: 2, color: 'black' }
+          },
+          showlegend: true,
+          hoverinfo: 'skip'
+        }
+      ];
+
       const traces = Object.keys(grouped).map(president => ({
         type: 'scatter',
         mode: 'markers',
-        name: president,
+        name: '',
+        showlegend: false,
         x: grouped[president].x,
         y: grouped[president].y,
         text: grouped[president].text,
@@ -130,7 +164,7 @@
         }
       };
 
-      Plotly.newPlot('timeline', traces, layout);
+      Plotly.newPlot('timeline', legendTraces.concat(traces), layout);
 
       const plotDiv = document.getElementById('timeline');
       plotDiv.on('plotly_click', function(data){
