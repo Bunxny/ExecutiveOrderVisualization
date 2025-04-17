@@ -2,16 +2,16 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Executive Orders Timeline</title>
+  <title>Executive Orders Timeline by President</title>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body { font-family: Arial; margin: 40px; }
-    #timeline { width: 100%; height: 600px; }
+    #timeline { width: 100%; height: 1000px; }
   </style>
 </head>
 <body>
-  <h2>Executive Orders Timeline Explorer</h2>
+  <h2>Executive Orders Timeline Explorer (Faceted by President)</h2>
   <div id="timeline"></div>
 
   <script>
@@ -60,41 +60,47 @@
         const party = presidentObj.party;
 
         if (!grouped[president]) grouped[president] = {
-          x: [], y: [], text: [], customdata: [],
-          marker: {
-            color: partyColors[party],
-            size: 10,
-            line: { width: 2, color: 'black' }
-          }
+          dates: [], texts: [], urls: [], party
         };
 
-        grouped[president].x.push(date);
-        grouped[president].y.push(president);
-        grouped[president].text.push(`${d.executive_order_number ? "EO " + d.executive_order_number + ": " : ""}${title}`);
-        grouped[president].customdata.push(url);
+        grouped[president].dates.push(date);
+        grouped[president].texts.push(`${d.executive_order_number ? "EO " + d.executive_order_number + ": " : ""}${title}`);
+        grouped[president].urls.push(url);
       });
 
-      const traces = Object.keys(grouped).map(president => ({
-        type: 'scatter',
-        mode: 'markers',
-        name: president,
-        x: grouped[president].x,
-        y: grouped[president].y,
-        text: grouped[president].text,
-        customdata: grouped[president].customdata,
-        marker: grouped[president].marker,
-        textfont: { color: 'black' }
-      }));
+      const presidents = Object.keys(grouped);
+      const traces = [];
+      const annotations = [];
 
-      const annotations = Object.entries(grouped).map(([president, group]) => {
-        const dates = group.x.map(d => new Date(d));
-        const maxDate = new Date(Math.max(...dates));
-        const count = group.x.length;
+      presidents.forEach((president, index) => {
+        const row = index + 1;
 
-        return {
+        traces.push({
+          x: grouped[president].dates,
+          y: Array(grouped[president].dates.length).fill(president),
+          text: grouped[president].texts,
+          customdata: grouped[president].urls,
+          type: 'scatter',
+          mode: 'markers',
+          marker: {
+            color: partyColors[grouped[president].party],
+            size: 10,
+            line: { width: 2, color: 'black' }
+          },
+          xaxis: 'x',
+          yaxis: 'y' + row,
+          name: president,
+          showlegend: false
+        });
+
+        // Annotation
+        const maxDate = new Date(Math.max(...grouped[president].dates.map(d => new Date(d))));
+        annotations.push({
           x: maxDate.toISOString().split("T")[0],
           y: president,
-          text: `📝 ${count} orders`,
+          text: `📝 ${grouped[president].dates.length} orders`,
+          xref: 'x',
+          yref: 'y' + row,
           showarrow: true,
           arrowhead: 4,
           ax: 40,
@@ -103,25 +109,24 @@
           bgcolor: 'rgba(255,255,255,0.7)',
           bordercolor: 'gray',
           borderwidth: 1
-        };
+        });
       });
 
       const layout = {
-        title: 'Executive Orders Over Time',
+        title: 'Executive Orders Timeline by President',
+        grid: { rows: presidents.length, columns: 1, pattern: 'independent' },
+        height: presidents.length * 150,
         hovermode: 'closest',
-        xaxis: { title: 'Signing Date', type: 'date', autorange: true },
-        yaxis: { title: 'President', automargin: true },
         annotations: annotations,
-        hoverlabel: {
-          font: {
-            color: 'black',
-            size: 12,
-            family: 'Arial'
-          },
-          bgcolor: 'white',
-          bordercolor: 'black'
-        }
+        xaxis: { title: 'Date', type: 'date' }
       };
+
+      presidents.forEach((president, i) => {
+        layout['yaxis' + (i + 1)] = {
+          title: president,
+          automargin: true
+        };
+      });
 
       Plotly.newPlot('timeline', traces, layout);
 
